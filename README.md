@@ -62,14 +62,13 @@ python run_waitress.py
 ```
 ## 🎯 Features & Functionality
 ✔ Define Block Sections
-
 Click two points on the map.
 Click "Define Block Section" to create a section.
+
 ✔ Download Block Sections
-
 Click "Download Block Sections" to save as GeoJSON.
-✔ Undo Last Block Section
 
+✔ Undo Last Block Section
 Click "Undo Last Section" to remove the last defined block.
 
 ## 💡 Contributing
