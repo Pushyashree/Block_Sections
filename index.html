@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Railway Network of Munich</title>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <style>
+        #map { height: 600px; width: 100%; }
+        body { margin: 0; padding: 0; }
+        button { position: absolute; top: 10px; left: 10px; z-index: 1000; }
+        #downloadButton { left: 150px; }
+        #undoButton { left: 300px; }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    <button id="defineBlockButton">Define Block Section</button>
+    <button id="downloadButton">Download Block Sections</button>
+    <button id="undoButton">Undo Last Section</button>
+    <script>
+        var map = L.map('map').setView([48.1351, 11.5820], 19);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            maxZoom: 19,
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Load nodes and edges GeoJSON
+        fetch('nodes.geojson')
+            .then(response => response.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    pointToLayer: function(feature, latlng) {
+                        var options = {
+                            radius: feature.properties.is_station ? 8 : 5,
+                            color: feature.properties.is_station ? 'red' : 'blue',
+                            fill: true
+                        };
+                        return L.circleMarker(latlng, options);
+                    }
+                }).addTo(map);
+            });
+
+        fetch('edges.geojson')
+            .then(response => response.json())
+            .then(data => {
+                L.geoJSON(data, {
+                    style: function(feature) {
+                        return {color: 'blue'};
+                    }
+                }).addTo(map);
+            });
+
+        var selectedPoints = [];
+        var blockSections = [];
+
+        map.on('click', function(e) {
+            if (selectedPoints.length < 2) {
+                selectedPoints.push(e.latlng);
+                L.marker(e.latlng).addTo(map);
+            }
+        });
+
+        document.getElementById('defineBlockButton').onclick = function() {
+            if (selectedPoints.length === 2) {
+                var blockSection = L.polyline([selectedPoints[0], selectedPoints[1]], {color: 'red', weight: 4, dashArray: '5, 5'}).addTo(map);
+                blockSections.push(blockSection);
+
+                // Send block section to backend
+                fetch('/api/block-section', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        point1: selectedPoints[0],
+                        point2: selectedPoints[1]
+                    })
+                }).then(response => response.json())
+                  .then(data => console.log(data))
+                  .catch(error => console.error('Error:', error));
+
+                selectedPoints = [];
+            } else {
+                alert("Select exactly two points on the map.");
+            }
+        };
+
+        document.getElementById('downloadButton').onclick = function() {
+            // Download block sections
+            fetch('/api/save-block-sections')
+                .then(response => response.blob())
+                .then(blob => {
+                    var url = window.URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = 'block_sections.geojson';
+                    document.body.appendChild(a);
+                    a.click();
+                    window.URL.revokeObjectURL(url);
+                })
+                .catch(error => console.error('Error:', error));
+        };
+
+        document.getElementById('undoButton').onclick = function() {
+            if (blockSections.length > 0) {
+                var lastBlockSection = blockSections.pop();
+                map.removeLayer(lastBlockSection);
+
+                // Notify backend to remove the last block section
+                fetch('/api/undo-block-section', {
+                    method: 'POST'
+                }).then(response => response.json())
+                  .then(data => console.log(data))
+                  .catch(error => console.error('Error:', error));
+            } else {
+                alert("No block section to undo.");
+            }
+        };
+    </script>
+</body>
+</html>
