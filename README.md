@@ -26,8 +26,7 @@ Before running the application, convert the raw railway network data into GeoJSO
 python convert_data.py
 ```
 This will generate:
-nodes.geojson
-edges.geojson
+nodes.geojson and edges.geojson
 
 ### **2️⃣ Run the Application**
 Start the Flask web application using the Waitress server:
