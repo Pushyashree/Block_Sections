@@ -73,4 +73,7 @@ Click "Undo Last Section" to remove the last defined block.
 ## 💡 Contributing
 Feel free to open issues and submit pull requests. Contributions are welcome!
 
-
+## ✍️ Author
+👤 Pushya Shree Konasale Jayaramu
+📧 pushyashree.kj.2000@gmail.com
+🔗 https://www.linkedin.com/in/pushya-shree-konasale-jayaramu-6a61881a8/
